@@ -11,7 +11,7 @@ if [ ! -z "$PORT" ]; then
 	LISTEN="$PORT"
 fi
 
-# Specify custom log format and health check endpoint
+# Specify custom log format and root location
 cat <<EOF > /etc/nginx/conf.d/default.conf
 log_format redirects '[\$time_local] \$request_method \$scheme://\$host\$request_uri';
 
@@ -20,7 +20,7 @@ server {
 	access_log off;
 	error_log off;
 
-	location /health {
+	location / {
 		add_header Content-Type text/plain;
 		return 200 'ok';
 	}
