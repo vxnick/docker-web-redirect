@@ -9,7 +9,7 @@ Based on [MorbZ/docker-web-redirect](https://github.com/MorbZ/docker-web-redirec
 - Keeps the URL path and GET parameters
 - Permanent redirect (HTTP 301)
 - Multiple redirects (this fork) with `REDIRECTS='olddomain.com=newdomain.com,olddomain2.com=newdomain2.com'`
-- Simple log format to see what traffic the old domains are getting
+- Simple log format to see what traffic the old domains are getting (this fork)
 
 ## Usage ##
 ### Docker run ###
