@@ -11,9 +11,20 @@ if [ ! -z "$PORT" ]; then
 	LISTEN="$PORT"
 fi
 
-# Specify custom log format
+# Specify custom log format and health check endpoint
 cat <<EOF > /etc/nginx/conf.d/default.conf
 log_format redirects '[\$time_local] \$request_method \$scheme://\$host\$request_uri';
+
+server {
+	listen 80 default_server;
+	access_log off;
+	error_log off;
+
+	location /health {
+		add_header Content-Type text/plain;
+		return 200 'ok';
+	}
+}
 EOF
 
 while IFS=',' read -ra redirects; do
