@@ -1,17 +1,7 @@
 #!/bin/bash
-if [ -z "$REDIRECT_TARGET" ]; then
-	echo "Redirect target variable not set (REDIRECT_TARGET)"
+if [ -z "$REDIRECTS" ]; then
+	echo "Redirects variable not set (REDIRECTS)"
 	exit 1
-else
-	# Add http if not set
-	if ! [[ $REDIRECT_TARGET =~ ^https?:// ]]; then
-		REDIRECT_TARGET="http://$REDIRECT_TARGET"
-	fi
-
-	# Add trailing slash
-	if [[ ${REDIRECT_TARGET:length-1:1} != "/" ]]; then
-		REDIRECT_TARGET="$REDIRECT_TARGET/"
-	fi
 fi
 
 # Default to 80
@@ -21,15 +11,38 @@ if [ ! -z "$PORT" ]; then
 	LISTEN="$PORT"
 fi
 
+# Specify custom log format
 cat <<EOF > /etc/nginx/conf.d/default.conf
-server {
-	listen ${LISTEN};
-
-	rewrite ^/(.*)\$ ${REDIRECT_TARGET}\$1 permanent;
-}
+log_format redirects '[\$time_local] \$request_method \$scheme://\$host\$request_uri';
 EOF
 
+while IFS=',' read -ra redirects; do
+	for pair in "${redirects[@]}"; do
+		origin=${pair%=*}
+		destination=${pair#*=}
 
-echo "Listening to $LISTEN, Redirecting HTTP requests to ${REDIRECT_TARGET}..."
+		# Add http if not set
+		if ! [[ $destination =~ ^https?:// ]]; then
+			destination="http://$destination"
+		fi
+
+		# Add trailing slash
+		if [[ ${destination:length-1:1} != "/" ]]; then
+			destination="$destination/"
+		fi
+
+		cat <<-EOF >> /etc/nginx/conf.d/default.conf
+		server {
+			listen ${LISTEN};
+			server_name $origin;
+			access_log /var/log/nginx/access.log redirects;
+
+			rewrite ^/(.*)\$ ${destination}\$1 permanent;
+		}
+		EOF
+	done
+done <<< "$REDIRECTS"
+
+echo "Listening on port $LISTEN..."
 
 exec nginx -g "daemon off;"
